@@ -40,6 +40,7 @@ fn main() {
         .allowlist_item("IORING.*")
         .allowlist_item("IOSQE.*")
         .allowlist_type("io_uring.*")
+        .clang_arg(format!("-I{}/liburing/src/include", out_dir.clone()))
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .header("c/wrapper.h")
         .generate()
