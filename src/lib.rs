@@ -32,7 +32,7 @@ where
     };
 
     while head != tail {
-        let index = io_uring_cqe_index(&ring, head, ring.cq.ring_mask);
+        let index = io_uring_cqe_index(ring, head, ring.cq.ring_mask);
         // Safety: Accessing the CQE array directly can be unsafe. Ensure that index calculations are correct.
         let cqe = unsafe { &mut *ring.cq.cqes.add(index as usize) };
 

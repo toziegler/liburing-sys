@@ -8,7 +8,7 @@ fn main() {
 
     if !Path::new("./c/liburing/src/").exists() {
         let _ = Command::new("git")
-            .args(&["submodule", "update", "--init", "c/liburing"])
+            .args(["submodule", "update", "--init", "c/liburing"])
             .status();
     }
 

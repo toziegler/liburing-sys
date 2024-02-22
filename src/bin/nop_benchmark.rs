@@ -17,9 +17,9 @@ fn main() {
         }
 
         let start = Instant::now();
-        for i in 0..OPERATIONS {
+        for _ in 0..OPERATIONS {
             //let mut sqe:  io_uring_sqe = io_uring_get_sq
-            let mut sqe = io_uring_get_sqe(&mut ring);
+            let sqe = io_uring_get_sqe(&mut ring);
             io_uring_prep_nop(sqe);
             io_uring_sqe_set_data64(sqe, 1);
 
