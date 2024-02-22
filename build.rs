@@ -1,9 +1,16 @@
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
+
+
+    if !Path::new("./c/liburing/src/").exists() {
+        let _ = Command::new("git")
+            .args(&["submodule", "update", "--init", "libgit2"])
+            .status();
+    }
 
     Command::new("cp")
         .arg("-r")
