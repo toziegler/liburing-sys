@@ -1,4 +1,4 @@
-use std::{mem::MaybeUninit, time::Instant};
+use std::time::Instant;
 
 use io_ruring_sys::*;
 
@@ -16,22 +16,32 @@ fn main() {
             panic!("could not initialize the ring");
         }
 
+        let mut data_start: u64 = 0;
+        let mut data_expect: u64 = 0;
         let start = Instant::now();
         for _ in 0..OPERATIONS {
             //let mut sqe:  io_uring_sqe = io_uring_get_sq
             let sqe = io_uring_get_sqe(&mut ring);
             io_uring_prep_nop(sqe);
-            io_uring_sqe_set_data64(sqe, 1);
+            io_uring_sqe_set_data64(sqe, data_start);
+            data_start += 1;
 
             io_uring_submit_and_wait(&mut ring, 1);
 
-            io_uring_for_each_cqe(&mut ring, |cqe, _ | {
+            let mut nr: u32 = 0;
+            io_uring_for_each_cqe(&mut ring, |cqe, _| {
                 let data = io_uring_cqe_get_data64(cqe);
-                assert_eq!(data, 1);
-            })
+                assert_eq!(data, data_expect);
+                data_expect += 1;
+                nr += 1;
+            });
+            io_uring_cq_advance(&mut ring, nr);
         }
         let elapsed = start.elapsed();
         println!("100e6 operations took {}", elapsed.as_secs_f64());
-        println!("Total ops: {} MOPs/sec", (OPERATIONS as f64 / elapsed.as_secs_f64()));
+        println!(
+            "Total ops: {} MOPs/sec",
+            (OPERATIONS as f64 / elapsed.as_secs_f64())
+        );
     }
 }

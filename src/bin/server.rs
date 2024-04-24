@@ -1,14 +1,11 @@
 use core::panic;
+use std::alloc::{self, Layout};
 use std::ffi::c_void;
-use std::{mem::MaybeUninit, time::Instant};
+use std::os::fd::AsRawFd;
 
 use io_ruring_sys::*;
 
-const OPERATIONS: usize = 100_000_000;
-use std::os::fd::{AsRawFd, RawFd};
 const NEW_CLIENT: u64 = 0xffffffffffffffff;
-
-use std::alloc::{self, Layout};
 
 pub struct Page {
     data: *mut u8,
@@ -68,7 +65,7 @@ fn main() {
         }
 
         let mut clients = Vec::new();
-        let mut sqe = io_uring_get_sqe(&mut ring);
+        let sqe = io_uring_get_sqe(&mut ring);
         io_uring_prep_multishot_accept(sqe, fd, std::ptr::null_mut(), std::ptr::null_mut(), 0);
         io_uring_sqe_set_data64(sqe, NEW_CLIENT);
         println!("Server ready!");
@@ -81,6 +78,7 @@ fn main() {
 
             io_uring_submit_and_wait(&mut ring, 1);
 
+            let mut nr: u32 = 0;
             io_uring_for_each_cqe(&mut ring, |cqe, ring| {
                 if cqe.res < 0 {
                     panic!("result not as expected {}", -cqe.res);
@@ -96,26 +94,40 @@ fn main() {
                     };
                     clients.push(client);
                     let sqe = io_uring_get_sqe(ring);
-                    io_uring_prep_recv(sqe, fd, clients[cid].page.as_mut_ptr() as *mut c_void, 1024, 0x100); // MSG_WAITALL 
-                        io_uring_sqe_set_data64(sqe, cid as u64);
+                    io_uring_prep_recv(
+                        sqe,
+                        fd,
+                        clients[cid].page.as_mut_ptr() as *mut c_void,
+                        1024,
+                        0x100,
+                    ); // MSG_WAITALL
+                    io_uring_sqe_set_data64(sqe, cid as u64);
                 } else {
-                    let cid = data; 
+                    let cid = data;
                     assert!((cid as usize) < clients.len());
                     let client = &mut clients[cid as usize];
-                    if cqe.res == 0{
+                    if cqe.res == 0 {
                         println!("client id {} disconnected", cid);
                     }
 
                     assert!(cqe.res == 1024);
 
                     //let sqe = io_uring_get_sqe(ring);
-                    //io_uring_prep_send(sqe, client.fd, client.page.as_mut_ptr() as *mut c_void, 1024, 0x100); // MSG_WAITALL POSSIBLY TAKE NEW BUFFER HERE 
+                    //io_uring_prep_send(sqe, client.fd, client.page.as_mut_ptr() as *mut c_void, 1024, 0x100); // MSG_WAITALL POSSIBLY TAKE NEW BUFFER HERE
 
                     let sqe = io_uring_get_sqe(ring);
-                    io_uring_prep_recv(sqe, client.fd, client.page.as_mut_ptr() as *mut c_void, 1024, 0x100); // MSG_WAITALL 
+                    io_uring_prep_recv(
+                        sqe,
+                        client.fd,
+                        client.page.as_mut_ptr() as *mut c_void,
+                        1024,
+                        0x100,
+                    ); // MSG_WAITALL
                     io_uring_sqe_set_data64(sqe, cid);
                 }
-            })
+                nr += 1;
+            });
+            io_uring_cq_advance(&mut ring, nr);
         }
     }
 }
