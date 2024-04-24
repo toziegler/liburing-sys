@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use io_ruring_sys::*;
+use liburing_sys::*;
 
 const OPERATIONS: usize = 100_000_000;
 fn main() {

@@ -3,7 +3,7 @@ use std::alloc::{self, Layout};
 use std::ffi::c_void;
 use std::os::fd::AsRawFd;
 
-use io_ruring_sys::*;
+use liburing_sys::*;
 
 const NEW_CLIENT: u64 = 0xffffffffffffffff;
 
