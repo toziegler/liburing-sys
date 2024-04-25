@@ -18,6 +18,7 @@ fn io_uring_cqe_index(ring: &io_uring, ptr: u32, mask: u32) -> u32 {
     (ptr & mask) << io_uring_cqe_shift(ring)
 }
 
+#[inline]
 pub fn io_uring_for_each_cqe<F>(ring: &mut io_uring, mut handle_cqe: F)
 where
     F: FnMut(&io_uring_cqe, &mut io_uring),
