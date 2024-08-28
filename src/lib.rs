@@ -5,7 +5,7 @@
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 // Translating `io_uring_cqe_shift` to a Rust function
-fn io_uring_cqe_shift(ring: &io_uring) -> u32 {
+pub fn io_uring_cqe_shift(ring: &io_uring) -> u32 {
     if (ring.flags & IORING_SETUP_CQE32) != 0 {
         1
     } else {
@@ -14,7 +14,7 @@ fn io_uring_cqe_shift(ring: &io_uring) -> u32 {
 }
 
 // Translating `io_uring_cqe_index` to a Rust function
-fn io_uring_cqe_index(ring: &io_uring, ptr: u32, mask: u32) -> u32 {
+pub fn io_uring_cqe_index(ring: &io_uring, ptr: u32, mask: u32) -> u32 {
     (ptr & mask) << io_uring_cqe_shift(ring)
 }
 
